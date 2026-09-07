@@ -1,8 +1,8 @@
-# Presenton Skills
+# Presenton Claude Plugin
 
-Agent skills for creating presentation files with [Presenton](https://presenton.ai).
+An Agent Skill and Claude plugin for creating presentation files with [Presenton](https://presenton.ai).
 
-The included `presenton` skill turns presentation requests into editable PPTX files, PDFs, and PNG slide images. It can search Presenton designs and icons, upload user-provided images, validate generated slide HTML, export each requested format, and return a shareable preview link.
+The included `presenton` skill turns presentation requests into editable PPTX files, PDFs, and PNG slide images. It uses Presenton's remote MCP connector to search designs and icons, import user-provided images, validate generated slide HTML, export each requested format, and return a shareable preview link.
 
 ## Get the skill
 
@@ -10,6 +10,32 @@ The included `presenton` skill turns presentation requests into editable PPTX fi
 - [skills.sh](https://www.skills.sh/presenton/skills/presenton)
 
 You can also copy [`skills/presenton`](skills/presenton) into the skills directory used by your compatible agent.
+
+## Install as a Claude plugin
+
+The plugin bundles a remote MCP connection to `https://api.presenton.ai/skills/mcp`, allowing its tools to work from Claude.ai without direct code-execution egress to the Presenton REST API. The endpoint must be deployed as a Streamable HTTP MCP server exposing the six tools documented in [`skills/presenton/references/mcp-contract.md`](skills/presenton/references/mcp-contract.md).
+
+Upload the packaged ZIP from `dist/presenton-claude-plugin.zip` through **Customize → Plugins** in Claude.ai. Enable the plugin, start a new conversation, and invoke `/presenton:presenton` with a presentation request.
+
+### Claude.ai tool approvals
+
+Claude.ai controls MCP tool approvals; a plugin cannot silently auto-approve its own tools. Custom connector tools may initially show **Allow once**, **Always allow**, and **Deny**. If you trust Presenton and do not want a confirmation for every call, go to **Customize → Connectors → Presenton → Tool permissions** and set the required tools—or the connector—to **Always allow**. You may also choose **Always allow** in the approval dialog. Permissions can be requested separately for different tools, and reinstalling or replacing the plugin may require approving the tools again.
+
+Test the repository directly during development:
+
+```bash
+claude --plugin-dir .
+```
+
+The installed skill is namespaced as `/presenton:presenton`.
+
+Before publishing a release, validate the plugin from the repository root:
+
+```bash
+claude plugin validate . --strict
+```
+
+The repository includes the required [`.claude-plugin/plugin.json`](.claude-plugin/plugin.json) manifest. Individual authors can submit its public GitHub URL through the [Claude Console plugin submission form](https://platform.claude.com/plugins/submit). Claude.ai's organization submission portal requires a Team or Enterprise organization with directory-management access.
 
 ## What it supports
 
@@ -19,18 +45,22 @@ You can also copy [`skills/presenton`](skills/presenton) into the skills directo
 - Editable HTML text in generated PowerPoint files
 - Shareable presentation previews
 - HTML structure, asset, and font validation before export
+- Remote MCP operation from Claude.ai, Claude Desktop, Cowork, and Claude Code
 
-The skill uses Presenton's public API at `https://api.presenton.ai`; no API key is required.
+The Claude plugin connects to Presenton's remote MCP endpoint at `https://api.presenton.ai/skills/mcp`; no API key is configured in the plugin.
 
 ## Repository layout
 
 ```text
+.claude-plugin/
+└── plugin.json              # Claude Code plugin manifest
+.mcp.json                    # Presenton remote MCP connection
 skills/presenton/
 ├── SKILL.md                  # Skill instructions and workflow
 ├── agents/openai.yaml        # Agent-facing metadata
-├── references/               # API and HTML format documentation
-├── scripts/                  # Export, asset, and validation helpers
-└── tests/                    # Helper test suite
+├── references/               # MCP contract and HTML format documentation
+├── scripts/                  # Legacy/local helper utilities
+└── tests/                    # Legacy helper test suite
 ```
 
 ## Development

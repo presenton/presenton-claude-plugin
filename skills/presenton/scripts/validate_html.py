@@ -116,6 +116,26 @@ class FontMarkupParser(HTMLParser):
                     self.arbitrary_families.append(family)
 
 
+class ImageAltParser(HTMLParser):
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self.image_count = 0
+        self.warnings: list[str] = []
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        if tag.casefold() != "img":
+            return
+        self.image_count += 1
+        alt = dict(attrs).get("alt")
+        if alt is None or not alt.strip():
+            self.warnings.append(
+                f"Image {self.image_count} should include non-empty alt text unless it is decorative."
+            )
+
+    def handle_startendtag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        self.handle_starttag(tag, attrs)
+
+
 def split_font_stack(value: str) -> list[str]:
     return [part.strip().strip("'\"") for part in value.split(",") if part.strip()]
 
@@ -236,6 +256,18 @@ def validate_html(html: str) -> list[str]:
     return errors
 
 
+def validate_html_warnings(html: str) -> list[str]:
+    """Return advisory findings that must not make validation fail."""
+
+    parser = ImageAltParser()
+    try:
+        parser.feed(html)
+        parser.close()
+    except Exception:  # pragma: no cover - errors are handled by validate_html
+        return []
+    return parser.warnings
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("html", type=Path, help="HTML presentation file")
@@ -248,10 +280,14 @@ def main() -> int:
         return 2
 
     errors = validate_html(source)
+    warnings = validate_html_warnings(source)
     if errors:
         for error in errors:
             print(f"ERROR: {error}", file=sys.stderr)
         return 1
+
+    for warning in warnings:
+        print(f"WARNING: {warning}", file=sys.stderr)
 
     parsed = PresentationParser()
     parsed.feed(source)

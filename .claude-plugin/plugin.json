@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "presenton",
+  "displayName": "Presenton",
+  "version": "1.0.0",
+  "description": "Create editable PowerPoint presentations, PDFs, and PNG slide images through Presenton's remote MCP connector.",
+  "author": {
+    "name": "Presenton"
+  },
+  "homepage": "https://presenton.ai",
+  "repository": "https://github.com/presenton/presenton-claude-plugin",
+  "license": "Apache-2.0",
+  "keywords": [
+    "presentations",
+    "powerpoint",
+    "pptx",
+    "slides",
+    "pdf"
+  ]
+}

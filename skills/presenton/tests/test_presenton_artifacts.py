@@ -15,6 +15,7 @@ SCRIPTS_DIR = Path(__file__).resolve().parents[1] / "scripts"
 sys.path.insert(0, str(SCRIPTS_DIR))
 
 import presenton_artifacts  # noqa: E402
+from validate_html import validate_html_warnings  # noqa: E402
 
 
 class PresentonResponseMessageTests(unittest.TestCase):
@@ -269,6 +270,20 @@ class PresentonResponseMessageTests(unittest.TestCase):
         errors = presenton_artifacts.validate_html(html)
 
         self.assertTrue(any("data/base64 URLs" in error for error in errors))
+
+    def test_empty_image_alt_is_warning_not_error(self) -> None:
+        html = """<!doctype html>
+<html><head><script src="https://cdn.tailwindcss.com"></script></head>
+<body><main id="presentation-slides-wrapper" class="w-[1280px]">
+<section class="h-[720px] w-[1280px]"><img src="https://example.test/decorative.png" alt=""></section>
+</main></body></html>"""
+
+        errors = presenton_artifacts.validate_html(html)
+        warnings = validate_html_warnings(html)
+
+        self.assertEqual(errors, [])
+        self.assertEqual(len(warnings), 1)
+        self.assertIn("Image 1", warnings[0])
 
 
 if __name__ == "__main__":

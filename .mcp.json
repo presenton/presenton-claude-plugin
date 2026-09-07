@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "presenton": {
+      "type": "http",
+      "url": "https://api.presenton.ai/skills/mcp"
+    }
+  }
+}

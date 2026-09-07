@@ -1,10 +1,8 @@
 # HTML format for html-to-any
 
-## Temporary-file policy
+## In-memory MCP workflow
 
-Create working HTML only inside the private OS temporary directory returned by `presenton_artifacts.py create-temp`. Never write generated HTML or exported PPTX, PDF, PNG, or ZIP files into the workspace, repository, home directory, or another persistent location. Submit the temporary HTML to the API and return the response URL without downloading it. After all requested exports complete—or after errors, exhausted retries, or interruption—run `presenton_artifacts.py cleanup-temp --path <exact-created-path>` in a `finally`-equivalent step. The helper refuses to remove the OS temporary root, symlinks, and directories it did not create.
-
-When the entire workflow lives inside one Python process, `tempfile.TemporaryDirectory(prefix="presenton-")` is the preferred equivalent because its context manager performs the same cleanup automatically.
+Compose the complete HTML document in memory and send it through the Presenton MCP tools. Do not call the legacy helper scripts or write generated HTML and exports into the workspace. Return the download and preview URLs supplied by the MCP server instead of downloading the generated files.
 
 ## Required document structure
 
@@ -40,19 +38,26 @@ Do not wrap slides in another container inside `#presentation-slides-wrapper`. A
 ## Tailwind styling
 
 - Load Tailwind with `<script src="https://cdn.tailwindcss.com"></script>` in `<head>`.
-- Express all visual styling with Tailwind utility classes, including arbitrary pixel values when required.
-- Do not use inline `style` attributes or embedded `<style>` blocks.
+- Build the document Tailwind-first. Express every visual property in `class` attributes, including arbitrary values when required.
+- Never emit a `style` attribute or a `<style>` element anywhere in the source. This applies to normal HTML, SVG, templates, copied snippets, and chart containers.
+- Never add styles at runtime through `.style`, `cssText`, or `setAttribute("style", ...)` JavaScript.
+- Convert exact dimensions with arbitrary utilities: `width: 320px; height: 180px` becomes `class="h-[180px] w-[320px]"`.
+- Convert custom colors directly: `background: #0f172a; color: #ffffff` becomes `class="bg-[#0f172a] text-white"`.
+- Convert typography directly: `font-family: 'DM Sans'; line-height: 1.15` becomes `class="font-['DM_Sans'] leading-[1.15]"`.
+- Convert absolute positions directly: `left: 48px; top: 72px` becomes `class="left-[48px] top-[72px]"` on a positioned element.
+- Convert custom shadows with arbitrary values, replacing spaces with underscores, for example `shadow-[0_16px_40px_rgba(0,0,0,0.18)]`.
+- For full-bleed or background imagery, use an absolutely positioned `<img>` with Tailwind sizing and object-fit utilities instead of CSS `background-image`.
 - Keep the CDN script in the submitted HTML; the exporter waits for Tailwind to finish applying styles.
 
 ## Assets and fonts
 
-- Use complete inline SVG only for non-chart, non-icon artwork.
+- Use complete inline SVG only for non-chart, non-icon artwork. SVG markup must also contain no `style` attributes or `<style>` elements; use Tailwind classes or SVG presentation attributes such as `fill`, `stroke`, and `stroke-width`.
 - Use absolute HTTPS URLs for images, icons, and fonts. Never use `data:` URLs or base64 assets. Local and relative filesystem paths are not reachable by the exporter.
-- Before writing HTML, upload every user-provided image with `presenton_artifacts.py upload-image --file <image-path>` and use the returned HTTPS URL in an `<img>` element. Upload each file once and reuse its returned URL.
-- Search every icon with `presenton_artifacts.py search-icons --query <concept>`. Choose a returned HTTPS URL and use it in an `<img>` element. Do not substitute inline SVG, emoji, Unicode glyphs, icon fonts, or CSS-drawn shapes for icons.
+- Before writing HTML, import every user-provided image with the `import_public_image` MCP tool and use the returned HTTPS URL in an `<img>` element. Import each image once and reuse its returned URL.
+- Search every icon with the `search_icons` MCP tool. Choose a returned HTTPS URL and use it in an `<img>` element. Do not substitute inline SVG, emoji, Unicode glyphs, icon fonts, or CSS-drawn shapes for icons.
 - If the resolved user-provided or searched design names a font family, use that exact family in the slide markup and import its matching font resource in `<head>`. Do not replace it merely because another font is easier to load. If the exact font has no exporter-reachable source, do not substitute silently: tell the user which font is unavailable and obtain their approval before using a fallback.
 - When using a non-system font, add its matching absolute HTTPS stylesheet `<link>` in `<head>` before using the font in slide markup. A font-family name without a head import is invalid for this workflow. Generic/system fallback families do not need an import.
-- Include meaningful `alt` text on images.
+- Give images that convey content concise, non-empty `alt` text. Use `alt=""` for purely decorative images. Missing or empty alt text is an accessibility warning, not a validation error.
 - Use common fallback fonts. Web fonts may be used, but the exporter can only preserve what loads before stabilization and what the target format supports.
 - Ensure every image has explicit dimensions and a deliberate `object-fit` value.
 
@@ -97,6 +102,16 @@ Apply the resolved system consistently, but choose a content-appropriate layout 
 
 ## Preflight checklist
 
+Before calling `validate_presentation_html`, inspect the entire source—not only the visible slide markup. The following case-insensitive source checks must all return zero matches:
+
+- `\sstyle\s*=`
+- `<style(?:\s|>)`
+- `\.style\b`
+- `\bcssText\b`
+- `setAttribute\s*\(\s*['\"]style['\"]`
+
+If any match exists, rewrite the affected markup or JavaScript with Tailwind classes and run the checks again. Do not use the MCP validator as the first detector for inline CSS.
+
 - Complete document with `<html>`, `<head>`, and `<body>`
 - Tailwind CDN script present
 - Exactly one `#presentation-slides-wrapper`
@@ -105,8 +120,9 @@ Apply the resolved system consistently, but choose a content-appropriate layout 
 - No overflow, clipping, accidental scrollbars, or off-canvas text
 - No relative/local asset URLs
 - No `data:` URLs or base64-embedded assets
-- Every user-provided image uses the URL returned by the public image-upload endpoint
-- Every icon uses a URL returned by the icon-search endpoint
+- Every user-provided image uses the HTTPS URL returned by `import_public_image`
+- Every icon uses an HTTPS URL returned by `search_icons`
+- Every `<img>` has an `alt` attribute; content-bearing images use meaningful text and decorative images use `alt=""`
 - Every font family named by the resolved design is used exactly, or the user explicitly approved the reported fallback
 - Custom fonts used by slide markup are imported or linked from `<head>`
 - No inline `style` attributes or embedded `<style>` blocks
