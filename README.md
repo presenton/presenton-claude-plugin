@@ -49,7 +49,7 @@ Before publishing a release, validate the plugin from the repository root:
 claude plugin validate . --strict
 ```
 
-The repository includes the required [`.claude-plugin/plugin.json`](.claude-plugin/plugin.json) manifest. Individual authors can submit its public GitHub URL through the [Claude Console plugin submission form](https://platform.claude.com/plugins/submit). Claude.ai's organization submission portal requires a Team or Enterprise organization with directory-management access.
+The repository includes the required [`.claude-plugin/plugin.json`](.claude-plugin/plugin.json) manifest. Submit the repository through the [Claude developer portal](https://claude.ai/directory/manage). To release a new version, update the existing submission there and select **Check for new commits**; do not create a second submission for the same repository and plugin path. If version 1 was submitted through the older Claude Console form, follow [Anthropic's migration instructions](https://claude.com/docs/directory/publish): withdraw it in Console when that option is available, or contact `directory@anthropic.com` to move it to the developer portal.
 
 ## What it supports
 
