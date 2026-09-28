@@ -2,7 +2,7 @@
 
 ## In-memory MCP workflow
 
-Compose the complete HTML document in memory and send it through the Presenton MCP tools. Do not call the legacy helper scripts or write generated HTML and exports into the workspace. Return the download and preview URLs supplied by the MCP server instead of downloading the generated files.
+Compose the complete HTML document in memory and send it through the Presenton MCP tools. Do not write generated HTML and exports into the workspace. Return the download and preview URLs supplied by the MCP server instead of downloading the generated files.
 
 ## Required document structure
 

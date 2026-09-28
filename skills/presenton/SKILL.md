@@ -13,7 +13,7 @@ Create presentations through the `presenton` remote MCP server bundled with the 
 - Use these Presenton MCP tools: `search_designs`, `search_icons`, `import_public_image`, `validate_presentation_html`, `export_html_presentation`, and `create_presentation_preview`.
 - Tool names may be namespace-qualified by the client. Select the tool from the `presenton` MCP server whose terminal name matches the name above.
 - Inspect each advertised input schema and provide only supported arguments. Never guess an undocumented field.
-- Do not call Presenton's REST API through Python, Bash, `curl`, WebFetch, or another direct network path. Do not use the bundled legacy helper scripts for this workflow.
+- Do not call Presenton's REST API through Python, Bash, `curl`, WebFetch, or another direct network path.
 - If the Presenton connector or a required tool is unavailable, explain that `https://api.presenton.ai/skills/mcp` must be deployed and connected. Do not silently switch presentation engines unless the user asks for an alternative.
 - Create new presentations only. Do not activate for generic document PDFs, standalone images, text-only presentation outlines, or requests to edit an existing PPTX in place.
 - Never send credentials, secrets, payment details, or confidential material to the connector. If a user-provided image may contain sensitive information, ask the user to sanitize it or explicitly confirm the external transfer before importing it.

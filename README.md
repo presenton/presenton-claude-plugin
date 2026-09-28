@@ -15,7 +15,21 @@ You can also copy [`skills/presenton`](skills/presenton) into the skills directo
 
 The plugin bundles a remote MCP connection to `https://api.presenton.ai/skills/mcp`, allowing its tools to work from Claude.ai without direct code-execution egress to the Presenton REST API. The endpoint must be deployed as a Streamable HTTP MCP server exposing the six tools documented in [`skills/presenton/references/mcp-contract.md`](skills/presenton/references/mcp-contract.md).
 
-Upload the packaged ZIP from `dist/presenton-claude-plugin.zip` through **Customize → Plugins** in Claude.ai. Enable the plugin, start a new conversation, and invoke `/presenton:presenton` with a presentation request.
+Build the upload ZIP from the repository root:
+
+```bash
+mkdir -p dist
+python3 -m zipfile -c dist/presenton-claude-plugin.zip \
+  .claude-plugin/plugin.json .mcp.json LICENSE README.md \
+  skills/presenton/SKILL.md \
+  skills/presenton/references/html-authoring-system-prompt.md \
+  skills/presenton/references/html-format.md \
+  skills/presenton/references/mcp-contract.md
+```
+
+Upload `dist/presenton-claude-plugin.zip` through **Customize → Plugins** in Claude.ai. Enable the plugin, connect Presenton from its **Connectors** tab, start a new conversation, and invoke `/presenton:presenton` with a presentation request. The ZIP contains only the manifest, remote MCP configuration, skill instructions, required references, README, and license. It contains no local runtime helpers or tests; the direct REST API examples remain repository-only documentation.
+
+Claude may still show a general trust warning during installation. That prompt is controlled by Claude and cannot be suppressed in this plugin's manifest. It does not by itself mean the ZIP starts a local process: this plugin declares only an HTTPS MCP server and has no hooks or local MCP commands. Review the ZIP and the remote connector before continuing.
 
 ### Claude.ai tool approvals
 
@@ -58,23 +72,7 @@ The Claude plugin connects to Presenton's remote MCP endpoint at `https://api.pr
 skills/presenton/
 ├── SKILL.md                  # Skill instructions and workflow
 ├── agents/openai.yaml        # Agent-facing metadata
-├── references/               # MCP contract and HTML format documentation
-├── scripts/                  # Legacy/local helper utilities
-└── tests/                    # Legacy helper test suite
-```
-
-## Development
-
-Run the test suite from the repository root:
-
-```bash
-python3 -m unittest discover -s skills/presenton/tests
-```
-
-Validate a presentation HTML file with:
-
-```bash
-python3 skills/presenton/scripts/validate_html.py /path/to/presentation.html
+└── references/               # MCP contract and HTML format documentation
 ```
 
 ## License
